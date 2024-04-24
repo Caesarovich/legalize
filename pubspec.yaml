@@ -1,7 +1,7 @@
 name: legalize
 description: Checks for/sanitizes illegal characters in file names.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/Caesarovich/legalize
 
 environment:
   sdk: ^3.3.3
