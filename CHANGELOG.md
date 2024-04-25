@@ -1,3 +1,7 @@
+## 1.1.3
+
+- Simplify examples
+
 ## 1.1.0
 
 - Added `legalizeFilename` and `isValidFilename` functions.
