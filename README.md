@@ -1,12 +1,13 @@
 This package provides a set of functions to validate and sanitize filenames for different operating systems.
 
+Please read the [documentation](https://pub.dev/documentation/legalize/latest/) for more information.
+
 > **Note:** This package is still in development and may not be stable. Please use with caution.
 
 ## Features
 
-- [x] Validate filenames for Windows
-- [x] Validate filenames for Linux
-- [x] Validate filenames for MacOS
+- ✅ Validate filenames for Windows
+- ✅ Validate filenames for Linux, macOS, and other POSIX systems
 
 > **Note:** While this package strives to provide a comprehensive solution for validating filenames, it may not cover all types of file system or edge cases. Please report any issues you encounter.
 
@@ -21,9 +22,37 @@ dependencies:
 
 ## Usage
 
-You can sanitize filenames by using the provided functions.
+You can sanitize filenames by using the `legalizeFilename` function:
 
-For Windows:
+```dart
+import 'package:legalize/legalize.dart';
+
+void main() {
+	const someFilename = 'my?/?/?File.txt';
+
+	final sanitizedFilename = legalizeFilename(someFilename);
+
+	print(sanitizedFilename); // myFile.txt
+}
+```
+
+You can also specify the operating system to sanitize the filename for:
+
+```dart
+import 'dart:io' show Platform;
+
+import 'package:legalize/legalize.dart';
+
+void main() {
+	const someFilename = 'my?/?/?File.txt';
+
+	final sanitizedFilename = legalizeFilename(someFilename, os: Platform.operatingSystem);
+
+	print(sanitizedFilename); // On Windows: my//File.txt, On other systems: my???File.txt
+}
+```
+
+You can use specififc function for Windows:
 
 ```dart
 import 'package:legalize/legalize.dart';
@@ -36,7 +65,7 @@ void main() {
 }
 ```
 
-For other systems:
+Or for other systems:
 
 ```dart
 import 'package:legalize/legalize.dart';
@@ -52,16 +81,19 @@ void main() {
 You can also validate filenames:
 
 ```dart
+import 'dart:io' show Platform;
+
 import 'package:legalize/legalize.dart';
 
 void main() {
   const someFilename = 'some???Filename.txt';
 
-  if (!isValidWindowsFilename(someFilename)) {
-		print('Filename is invalid on windows');
+  if (!isValidFilename(someFilename, os: Platform.operatingSystem)) {
+		print('Filename is invalid for this system');
 	} else {
-		print('Filename is valid on windows');
+		print('Filename is valid for this system');
 	}
+
 }
 ```
 
