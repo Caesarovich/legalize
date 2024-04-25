@@ -1,6 +1,6 @@
 name: legalize
-description: Checks for/sanitizes illegal characters in file names.
-version: 1.0.0
+description: Checks for/sanitizes illegal characters in file names for different platforms.
+version: 1.1.0
 repository: https://github.com/Caesarovich/legalize
 
 environment:
