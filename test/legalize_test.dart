@@ -134,6 +134,61 @@ void main() {
     expect(isValidPosixFilename('Posix🚀'), isTrue);
   });
 
+  test("Check valid universal filename", () {
+    expect(isValidFilename('Universal'), isTrue);
+    expect(isValidUniversalFilename('Universal<'), isFalse);
+    expect(isValidUniversalFilename('con'), isFalse);
+    expect(isValidUniversalFilename(stringWithNull), isFalse);
+    expect(isValidUniversalFilename('Universal🚀'), isTrue);
+    expect(isValidUniversalFilename('Universal/'), isFalse);
+    expect(isValidUniversalFilename('A' * 256), isFalse);
+    expect(isValidUniversalFilename(''), isFalse);
+  });
+
+  test("Check filename", () {
+    // Windows
+    expect(isValidFilename('Windows', os: "windows"), isTrue);
+    expect(isValidFilename('Windows<', os: "windows"), isFalse);
+    expect(isValidFilename('con', os: "windows"), isFalse);
+
+    // Linux
+    expect(isValidFilename('Posix', os: "linux"), isTrue);
+    expect(isValidFilename('Posix<', os: "linux"), isTrue);
+    expect(isValidFilename('Posix/', os: "linux"), isFalse);
+    expect(isValidFilename('con', os: "linux"), isTrue);
+
+    // Android
+    expect(isValidFilename('Posix', os: "android"), isTrue);
+    expect(isValidFilename('Posix<', os: "android"), isTrue);
+    expect(isValidFilename('Posix/', os: "android"), isFalse);
+    expect(isValidFilename('con', os: "android"), isTrue);
+
+    // MacOS
+    expect(isValidFilename('Posix', os: "macos"), isTrue);
+    expect(isValidFilename('Posix<', os: "macos"), isTrue);
+    expect(isValidFilename('Posix/', os: "macos"), isFalse);
+    expect(isValidFilename('con', os: "macos"), isTrue);
+
+    // iOS
+    expect(isValidFilename('Posix', os: "ios"), isTrue);
+    expect(isValidFilename('Posix<', os: "ios"), isTrue);
+    expect(isValidFilename('Posix/', os: "ios"), isFalse);
+    expect(isValidFilename('con', os: "ios"), isTrue);
+
+    // Fuchsia
+    expect(isValidFilename('Posix', os: "fuchsia"), isTrue);
+    expect(isValidFilename('Posix<', os: "fuchsia"), isTrue);
+    expect(isValidFilename('Posix/', os: "fuchsia"), isFalse);
+    expect(isValidFilename('con', os: "fuchsia"), isTrue);
+
+    // Unspecified / Unknown
+    expect(isValidFilename('Universal'), isTrue);
+    expect(isValidFilename('Universal<'), isFalse);
+    expect(isValidFilename('Universal/'), isFalse);
+    expect(isValidFilename('con'), isFalse);
+    expect(isValidFilename('con', os: "unknown"), isFalse);
+  });
+
   test("Sanitize Windows filename", () {
     expect(legalizeWindowsFilename('Windows'), equals('Windows'));
     expect(legalizeWindowsFilename('Windows<'), equals('Windows_'));
@@ -353,5 +408,62 @@ void main() {
         legalizePosixFilename('Posix\u001fPosix',
             shouldReplaceControlCharacters: false),
         equals('Posix\u001fPosix'));
+  });
+
+  test('Sanitize universal filename', () {
+    expect(legalizeFilenameUniversal('Universal'), equals('Universal'));
+    expect(legalizeFilenameUniversal('Universal<'), equals('Universal_'));
+    expect(legalizeFilenameUniversal('con'), equals('_'));
+    expect(legalizeFilenameUniversal(stringWithNull), equals('IN_BETWEEN'));
+    expect(legalizeFilenameUniversal('Universal🚀'), equals('Universal🚀'));
+    expect(legalizeFilenameUniversal('Universal/'), equals('Universal_'));
+    expect(legalizeFilenameUniversal('A' * 256), equals('A' * 255));
+    expect(legalizeFilenameUniversal(''), equals('untitled'));
+    expect(legalizeFilenameUniversal('uni<<<??co??>>>rn'),
+        equals('uni_____co_____rn'));
+  });
+
+  test('Sanitize filename', () {
+    // Windows
+    expect(legalizeFilename('Windows', os: "windows"), equals('Windows'));
+    expect(legalizeFilename('Windows<', os: "windows"), equals('Windows_'));
+    expect(legalizeFilename('con', os: "windows"), equals('_'));
+
+    // Linux
+    expect(legalizeFilename('Posix', os: "linux"), equals('Posix'));
+    expect(legalizeFilename('Posix<', os: "linux"), equals('Posix<'));
+    expect(legalizeFilename('Posix/', os: "linux"), equals('Posix_'));
+    expect(legalizeFilename('con', os: "linux"), equals('con'));
+
+    // Android
+    expect(legalizeFilename('Posix', os: "android"), equals('Posix'));
+    expect(legalizeFilename('Posix<', os: "android"), equals('Posix<'));
+    expect(legalizeFilename('Posix/', os: "android"), equals('Posix_'));
+    expect(legalizeFilename('con', os: "android"), equals('con'));
+
+    // MacOS
+    expect(legalizeFilename('Posix', os: "macos"), equals('Posix'));
+    expect(legalizeFilename('Posix<', os: "macos"), equals('Posix<'));
+    expect(legalizeFilename('Posix/', os: "macos"), equals('Posix_'));
+    expect(legalizeFilename('con', os: "macos"), equals('con'));
+
+    // iOS
+    expect(legalizeFilename('Posix', os: "ios"), equals('Posix'));
+    expect(legalizeFilename('Posix<', os: "ios"), equals('Posix<'));
+    expect(legalizeFilename('Posix/', os: "ios"), equals('Posix_'));
+    expect(legalizeFilename('con', os: "ios"), equals('con'));
+
+    // Fuchsia
+    expect(legalizeFilename('Posix', os: "fuchsia"), equals('Posix'));
+    expect(legalizeFilename('Posix<', os: "fuchsia"), equals('Posix<'));
+    expect(legalizeFilename('Posix/', os: "fuchsia"), equals('Posix_'));
+    expect(legalizeFilename('con', os: "fuchsia"), equals('con'));
+
+    // Unspecified / Unknown
+    expect(legalizeFilename('Universal'), equals('Universal'));
+    expect(legalizeFilename('Universal<'), equals('Universal_'));
+    expect(legalizeFilename('Universal/'), equals('Universal_'));
+    expect(legalizeFilename('con'), equals('_'));
+    expect(legalizeFilename('con', os: "unknown"), equals('_'));
   });
 }

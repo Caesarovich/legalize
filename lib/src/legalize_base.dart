@@ -79,6 +79,30 @@ bool isValidPosixFilename(String filename) {
       !containsNullCharacter(filename);
 }
 
+/// Checks if the filename is valid for all systems.
+bool isValidUniversalFilename(String filename) {
+  return isValidPosixFilename(filename) && isValidWindowsFilename(filename);
+}
+
+/// Checks if the filename is valid for a given system.
+///
+/// [os] is used to determine the system. Its values can be any of "android" "fuchsia" "ios" "linux" "macos" "windows".
+/// If the system is unspecified or recognized, [isValidUniversalFilename] will be used.
+bool isValidFilename(String filename, {String? os}) {
+  switch (os) {
+    case 'windows':
+      return isValidWindowsFilename(filename);
+    case 'linux':
+    case 'macos':
+    case 'android':
+    case 'fuchsia':
+    case 'ios':
+      return isValidPosixFilename(filename);
+    default:
+      return isValidUniversalFilename(filename);
+  }
+}
+
 /// Sanitizes the filename for Windows systems.
 ///
 /// [replacement] is used to replace illegal characters.
@@ -154,6 +178,60 @@ String legalizePosixFilename(String filename,
   // If the filename is empty, replace it with a placeholder
   if (result.isEmpty) {
     result = placeholder;
+  }
+
+  return result;
+}
+
+/// Sanitizes the filename for both Windows and Posix systems.
+///
+///
+/// This function is a combination of [legalizeWindowsFilename] and [legalizePosixFilename].
+/// [replacement] is used to replace illegal characters.
+/// If the filename is empty after sanitization, it will be replaced with [placeholder].
+/// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
+String legalizeFilenameUniversal(String filename,
+    {String replacement = '_', String placeholder = 'untitled'}) {
+  var result = filename;
+
+  result = legalizeWindowsFilename(result,
+      replacement: replacement, placeholder: placeholder);
+  result = legalizePosixFilename(result,
+      replacement: replacement, placeholder: placeholder);
+
+  return result;
+}
+
+/// Sanitizes the filename for a given system.
+///
+/// [os] is used to determine the system. Its values can be any of "android" "fuchsia" "ios" "linux" "macos" "windows".
+/// If the system is unspecified or recognized, [legalizeFilenameUniversal] will be used.
+/// [replacement] is used to replace illegal characters.
+/// If the filename is empty after sanitization, it will be replaced with [placeholder].
+/// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
+String legalizeFilename(String filename,
+    {String? os, String replacement = '_', String placeholder = 'untitled'}) {
+  var result = filename;
+
+  switch (os) {
+    case 'windows':
+      result = legalizeWindowsFilename(result,
+          replacement: replacement, placeholder: placeholder);
+      break;
+    case 'linux':
+    case 'macos':
+    case 'android':
+    case 'fuchsia':
+    case 'ios':
+      result = legalizePosixFilename(
+        result,
+        replacement: replacement,
+        placeholder: placeholder,
+      );
+      break;
+    default:
+      result = legalizeFilenameUniversal(result,
+          replacement: replacement, placeholder: placeholder);
   }
 
   return result;
