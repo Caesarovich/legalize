@@ -78,3 +78,83 @@ bool isValidPosixFilename(String filename) {
       !containsIllegalPosixCharacters(filename) &&
       !containsNullCharacter(filename);
 }
+
+/// Sanitizes the filename for Windows systems.
+///
+/// [replacement] is used to replace illegal characters.
+/// If the filename is empty after sanitization, it will be replaced with [placeholder].
+/// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
+String legalizeWindowsFilename(String filename,
+    {String replacement = '_', String placeholder = 'untitled'}) {
+  var result = filename;
+
+  // Check length
+  if (result.length > 255) {
+    result = result.substring(0, 255);
+  }
+
+  // Replace null characters
+  result = result.replaceAll(String.fromCharCode(0), replacement);
+
+  // Replace control characters
+  result = result.replaceAll(RegExp(r'[\x00-\x1F]'), replacement);
+
+  // Replace illegal characters
+  result = result.replaceAll(RegExp(r'[<>:"/\\|?*]'), replacement);
+
+  // Replace trailing illegal characters
+  result = result.replaceAll(RegExp(r'[\. ]+$'), replacement);
+
+  // Replace reserved file names
+  if (isReservedWindowsFilename(result)) {
+    for (var reserved in reservedWindowsFilenames) {
+      if (result.toLowerCase().startsWith(reserved)) {
+        result = result.replaceFirst(reserved, replacement);
+        break;
+      }
+    }
+  }
+
+  // If the filename is empty, replace it with a placeholder
+  if (result.isEmpty) {
+    result = placeholder;
+  }
+
+  return result;
+}
+
+/// Sanitizes the filename for Posix systems.
+///
+/// [replacement] is used to replace illegal characters.
+/// If the filename is empty after sanitization, it will be replaced with [placeholder].
+/// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
+/// [shouldReplaceControlCharacters] determines whether control characters should be replaced. Default is true.
+String legalizePosixFilename(String filename,
+    {String replacement = '_',
+    String placeholder = 'untitled',
+    bool shouldReplaceControlCharacters = true}) {
+  var result = filename;
+
+  // Check length
+  if (result.length > 255) {
+    result = result.substring(0, 255);
+  }
+
+  // Replace null characters
+  result = result.replaceAll(String.fromCharCode(0), replacement);
+
+  // Replace control characters
+  if (shouldReplaceControlCharacters) {
+    result = result.replaceAll(RegExp(r'[\x00-\x1F]'), replacement);
+  }
+
+  // Replace illegal characters
+  result = result.replaceAll(RegExp(r'[/]'), replacement);
+
+  // If the filename is empty, replace it with a placeholder
+  if (result.isEmpty) {
+    result = placeholder;
+  }
+
+  return result;
+}
