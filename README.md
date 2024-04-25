@@ -6,8 +6,8 @@ Please read the [documentation](https://pub.dev/documentation/legalize/latest/) 
 
 ## Features
 
-- ✅ Validate filenames for Windows
-- ✅ Validate filenames for Linux, macOS, and other POSIX systems
+- ✅ Validate/Sanitize filenames for Windows
+- ✅ Validate/Sanitize filenames for Linux, macOS, and other POSIX systems
 
 > **Note:** While this package strives to provide a comprehensive solution for validating filenames, it may not cover all types of file system or edge cases. Please report any issues you encounter.
 
