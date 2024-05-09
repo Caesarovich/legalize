@@ -7,7 +7,8 @@ Please read the [documentation](https://pub.dev/documentation/legalize/latest/) 
 ## Features
 
 - ✅ Validate/Sanitize filenames for Windows
-- ✅ Validate/Sanitize filenames for Linux, macOS, and other POSIX systems
+- ✅ Validate/Sanitize filenames for macOS/iOS (HFS/HFS+)
+- ✅ Validate/Sanitize filenames for Linux, and other POSIX systems
 
 > **Note:** While this package strives to provide a comprehensive solution for validating filenames, it may not cover all types of file system or edge cases. Please report any issues you encounter.
 
@@ -65,6 +66,19 @@ void main() {
 }
 ```
 
+Or for macOS/iOS:
+
+```dart
+import 'package:legalize/legalize.dart';
+
+void main() {
+	const someFilename = 'my/:/:File.txt';
+
+	final sanitizedFilename = legalizeHFSFilename(someFilename);
+	print(sanitizedFilename); // myFile.txt
+}
+```
+
 Or for other systems:
 
 ```dart
@@ -96,6 +110,10 @@ void main() {
 
 }
 ```
+
+By default this library will sanitize control characters (0-31), but you can disable this by setting the `shouldReplaceControlCharacters` parameter to `false`.
+
+> **Note:** Even if you disable control character replacement, the library will still replace the NUL character (0).
 
 ## Contributing
 

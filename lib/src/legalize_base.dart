@@ -30,8 +30,7 @@ bool containsIllegalWindowsCharacters(String filename) {
 
 /// Checks if the filename is a reserved Windows file name.
 bool isReservedWindowsFilename(String filename) {
-  return reservedWindowsFilenames
-      .contains(filename.toLowerCase().split('.').first);
+  return reservedWindowsFilenames.contains(filename.toLowerCase().split('.').first);
 }
 
 bool containsIllegalWindowsTrailingCharacters(String filename) {
@@ -51,6 +50,11 @@ bool containsNullCharacter(String filename) {
 /// Checks if the filename contains a control character.
 bool containsControlCharacter(String filename) {
   return filename.contains(RegExp(r'[\x00-\x1F]'));
+}
+
+/// Checks if the filename contains illegal HFS characters.
+bool containsIllegalHFSCharacters(String filename) {
+  return filename.contains(RegExp(r'[/:]'));
 }
 
 /// Checks if the filename is of valid length.
@@ -74,14 +78,19 @@ bool isValidWindowsFilename(String filename) {
 ///
 /// This includes checking for illegal characters and length.
 bool isValidPosixFilename(String filename) {
-  return isLegalLength(filename) &&
-      !containsIllegalPosixCharacters(filename) &&
-      !containsNullCharacter(filename);
+  return isLegalLength(filename) && !containsIllegalPosixCharacters(filename) && !containsNullCharacter(filename);
+}
+
+/// Checks if the filename is a valid HFS filename.
+///
+/// This includes checking for illegal characters and length.
+bool isValidHFSFilename(String filename) {
+  return isLegalLength(filename) && !containsIllegalHFSCharacters(filename);
 }
 
 /// Checks if the filename is valid for all systems.
 bool isValidUniversalFilename(String filename) {
-  return isValidPosixFilename(filename) && isValidWindowsFilename(filename);
+  return isValidPosixFilename(filename) && isValidWindowsFilename(filename) && isValidHFSFilename(filename);
 }
 
 /// Checks if the filename is valid for a given system.
@@ -92,11 +101,12 @@ bool isValidFilename(String filename, {String? os}) {
   switch (os) {
     case 'windows':
       return isValidWindowsFilename(filename);
-    case 'linux':
+    case 'ios':
     case 'macos':
+      return isValidHFSFilename(filename);
     case 'android':
     case 'fuchsia':
-    case 'ios':
+    case 'linux':
       return isValidPosixFilename(filename);
     default:
       return isValidUniversalFilename(filename);
@@ -108,8 +118,7 @@ bool isValidFilename(String filename, {String? os}) {
 /// [replacement] is used to replace illegal characters.
 /// If the filename is empty after sanitization, it will be replaced with [placeholder].
 /// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
-String legalizeWindowsFilename(String filename,
-    {String replacement = '_', String placeholder = 'untitled'}) {
+String legalizeWindowsFilename(String filename, {String replacement = '_', String placeholder = 'untitled'}) {
   var result = filename;
 
   // Check length
@@ -154,9 +163,7 @@ String legalizeWindowsFilename(String filename,
 /// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
 /// [shouldReplaceControlCharacters] determines whether control characters should be replaced. Default is true.
 String legalizePosixFilename(String filename,
-    {String replacement = '_',
-    String placeholder = 'untitled',
-    bool shouldReplaceControlCharacters = true}) {
+    {String replacement = '_', String placeholder = 'untitled', bool shouldReplaceControlCharacters = true}) {
   var result = filename;
 
   // Check length
@@ -183,21 +190,51 @@ String legalizePosixFilename(String filename,
   return result;
 }
 
-/// Sanitizes the filename for both Windows and Posix systems.
+/// Legalizes the filename for HFS systems.
 ///
-///
-/// This function is a combination of [legalizeWindowsFilename] and [legalizePosixFilename].
 /// [replacement] is used to replace illegal characters.
 /// If the filename is empty after sanitization, it will be replaced with [placeholder].
 /// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
-String legalizeFilenameUniversal(String filename,
-    {String replacement = '_', String placeholder = 'untitled'}) {
+/// [shouldReplaceControlCharacters] determines whether control characters should be replaced. Default is true.
+String legalizeHFSFilename(String filename, {String replacement = '_', String placeholder = 'untitled', bool shouldReplaceControlCharacters = true}) {
   var result = filename;
 
-  result = legalizeWindowsFilename(result,
-      replacement: replacement, placeholder: placeholder);
-  result = legalizePosixFilename(result,
-      replacement: replacement, placeholder: placeholder);
+  // Check length
+  if (result.length > 255) {
+    result = result.substring(0, 255);
+  }
+
+  // Replace null characters
+  result = result.replaceAll(String.fromCharCode(0), replacement);
+
+  // Replace control characters
+  if (shouldReplaceControlCharacters) {
+    result = result.replaceAll(RegExp(r'[\x00-\x1F]'), replacement);
+  }
+
+  // Replace illegal characters
+  result = result.replaceAll(RegExp(r'[/:]'), replacement);
+
+  // If the filename is empty, replace it with a placeholder
+  if (result.isEmpty) {
+    result = placeholder;
+  }
+
+  return result;
+}
+
+/// Sanitizes the filename for both Windows and Posix systems.
+///
+/// This function is a combination of [legalizeWindowsFilename], [legalizePosixFilename] and [legalizeHFSFilename].
+/// [replacement] is used to replace illegal characters.
+/// If the filename is empty after sanitization, it will be replaced with [placeholder].
+/// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
+String legalizeFilenameUniversal(String filename, {String replacement = '_', String placeholder = 'untitled'}) {
+  var result = filename;
+
+  result = legalizeWindowsFilename(result, replacement: replacement, placeholder: placeholder);
+  result = legalizePosixFilename(result, replacement: replacement, placeholder: placeholder);
+  result = legalizeHFSFilename(result, replacement: replacement, placeholder: placeholder);
 
   return result;
 }
@@ -209,20 +246,20 @@ String legalizeFilenameUniversal(String filename,
 /// [replacement] is used to replace illegal characters.
 /// If the filename is empty after sanitization, it will be replaced with [placeholder].
 /// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
-String legalizeFilename(String filename,
-    {String? os, String replacement = '_', String placeholder = 'untitled'}) {
+String legalizeFilename(String filename, {String? os, String replacement = '_', String placeholder = 'untitled'}) {
   var result = filename;
 
   switch (os) {
     case 'windows':
-      result = legalizeWindowsFilename(result,
-          replacement: replacement, placeholder: placeholder);
+      result = legalizeWindowsFilename(result, replacement: replacement, placeholder: placeholder);
+      break;
+    case 'macos':
+    case 'ios':
+      result = legalizeHFSFilename(result, replacement: replacement, placeholder: placeholder);
       break;
     case 'linux':
-    case 'macos':
     case 'android':
     case 'fuchsia':
-    case 'ios':
       result = legalizePosixFilename(
         result,
         replacement: replacement,
@@ -230,8 +267,7 @@ String legalizeFilename(String filename,
       );
       break;
     default:
-      result = legalizeFilenameUniversal(result,
-          replacement: replacement, placeholder: placeholder);
+      result = legalizeFilenameUniversal(result, replacement: replacement, placeholder: placeholder);
   }
 
   return result;
