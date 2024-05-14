@@ -75,6 +75,13 @@ bool isLegalLength(String filename) {
   return filename.length <= 255 && filename.isNotEmpty;
 }
 
+/// Chechs if the filename is a relative path.
+///
+/// Returns `true` if filename is "." or "..".
+bool isRelativePath(String filename) {
+  return filename == '.' || filename == '..';
+}
+
 /// Checks if the filename is a valid Windows filename.
 ///
 /// This includes checking for illegal characters, reserved file names, null characters, and length.
@@ -82,21 +89,22 @@ bool isValidWindowsFilename(String filename) {
   return isLegalLength(filename) &&
       !containsIllegalWindowsCharacters(filename) &&
       !isReservedWindowsFilename(filename) &&
-      !containsNullCharacter(filename);
+      !containsNullCharacter(filename) &&
+      !isRelativePath(filename);
 }
 
 /// Checks if the filename is a valid Posix filename.
 ///
 /// This includes checking for illegal characters and length.
 bool isValidPosixFilename(String filename) {
-  return isLegalLength(filename) && !containsIllegalPosixCharacters(filename) && !containsNullCharacter(filename);
+  return isLegalLength(filename) && !containsIllegalPosixCharacters(filename) && !containsNullCharacter(filename) && !isRelativePath(filename);
 }
 
 /// Checks if the filename is a valid HFS filename.
 ///
 /// This includes checking for illegal characters and length.
 bool isValidHFSFilename(String filename) {
-  return isLegalLength(filename) && !containsIllegalHFSCharacters(filename);
+  return isLegalLength(filename) && !containsIllegalHFSCharacters(filename) && !isRelativePath(filename);
 }
 
 /// Checks if the filename is valid for all systems.
@@ -160,7 +168,7 @@ String legalizeWindowsFilename(String filename, {String replacement = '_', Strin
   }
 
   // If the filename is empty, replace it with a placeholder
-  if (result.isEmpty) {
+  if (result.isEmpty || isRelativePath(result)) {
     result = placeholder;
   }
 
@@ -194,7 +202,7 @@ String legalizePosixFilename(String filename,
   result = result.replaceAll(illegalPosixCharactersRegex, replacement);
 
   // If the filename is empty, replace it with a placeholder
-  if (result.isEmpty) {
+  if (result.isEmpty || isRelativePath(result)) {
     result = placeholder;
   }
 
@@ -227,7 +235,7 @@ String legalizeHFSFilename(String filename, {String replacement = '_', String pl
   result = result.replaceAll(illegalHFSCharactersRegex, replacement);
 
   // If the filename is empty, replace it with a placeholder
-  if (result.isEmpty) {
+  if (result.isEmpty || isRelativePath(result)) {
     result = placeholder;
   }
 

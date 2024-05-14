@@ -129,6 +129,22 @@ void main() {
     expect(isValidWindowsFilename(stringWithNull), isFalse);
     expect(isValidWindowsFilename('A' * 256), isFalse);
     expect(isValidWindowsFilename('Windows🚀'), isTrue);
+    expect(isValidWindowsFilename(''), isFalse);
+    expect(isValidWindowsFilename('.'), isFalse);
+    expect(isValidWindowsFilename('..'), isFalse);
+  });
+
+  test("Check HFS filename", () {
+    expect(isValidHFSFilename('HFS'), isTrue);
+    expect(isValidHFSFilename('HFS<'), isTrue);
+    expect(isValidHFSFilename('HFS/'), isFalse);
+    expect(isValidHFSFilename('HFS:'), isFalse);
+    expect(isValidHFSFilename(stringWithNull), isTrue);
+    expect(isValidHFSFilename('A' * 256), isFalse);
+    expect(isValidHFSFilename('HFS🚀'), isTrue);
+    expect(isValidWindowsFilename(''), isFalse);
+    expect(isValidWindowsFilename('.'), isFalse);
+    expect(isValidWindowsFilename('..'), isFalse);
   });
 
   test("Check Posix filename", () {
@@ -138,6 +154,9 @@ void main() {
     expect(isValidPosixFilename(stringWithNull), isFalse);
     expect(isValidPosixFilename('A' * 256), isFalse);
     expect(isValidPosixFilename('Posix🚀'), isTrue);
+    expect(isValidWindowsFilename(''), isFalse);
+    expect(isValidWindowsFilename('.'), isFalse);
+    expect(isValidWindowsFilename('..'), isFalse);
   });
 
   test("Check valid universal filename", () {
@@ -148,7 +167,9 @@ void main() {
     expect(isValidUniversalFilename('Universal🚀'), isTrue);
     expect(isValidUniversalFilename('Universal/'), isFalse);
     expect(isValidUniversalFilename('A' * 256), isFalse);
-    expect(isValidUniversalFilename(''), isFalse);
+    expect(isValidWindowsFilename(''), isFalse);
+    expect(isValidWindowsFilename('.'), isFalse);
+    expect(isValidWindowsFilename('..'), isFalse);
   });
 
   test("Check filename", () {
@@ -243,6 +264,9 @@ void main() {
     expect(legalizeWindowsFilename('W|ndows', replacement: ''), equals('Wndows'));
     expect(legalizeWindowsFilename('Windows🚀', replacement: ''), equals('Windows🚀'));
     expect(legalizeWindowsFilename('', replacement: ''), equals('untitled'));
+    expect(legalizeWindowsFilename('.', replacement: ''), equals('untitled'));
+    expect(legalizeWindowsFilename('..', replacement: ''), equals('untitled'));
+    expect(legalizeWindowsFilename('>..<', replacement: ''), equals('untitled'));
     expect(legalizeWindowsFilename('<', replacement: ''), equals('untitled'));
     expect(legalizeWindowsFilename('con', replacement: ''), equals('untitled'));
     expect(legalizeWindowsFilename('<|||con\u0000?', replacement: ''), equals('untitled'));
@@ -282,6 +306,8 @@ void main() {
     expect(legalizeHFSFilename('H/FS'), equals('H_FS'));
     expect(legalizeHFSFilename('HFS🚀'), equals('HFS🚀'));
     expect(legalizeHFSFilename(''), equals('untitled'));
+    expect(legalizeHFSFilename('.'), equals('untitled'));
+    expect(legalizeHFSFilename('..'), equals('untitled'));
     expect(legalizeHFSFilename('uni<<<??co??>>>rn'), equals('uni<<<??co??>>>rn'));
   });
 
@@ -298,6 +324,8 @@ void main() {
     expect(legalizeHFSFilename('H/FS', replacement: '-'), equals('H-FS'));
     expect(legalizeHFSFilename('HFS🚀', replacement: '-'), equals('HFS🚀'));
     expect(legalizeHFSFilename('', replacement: '-'), equals('untitled'));
+    expect(legalizeHFSFilename('.', replacement: '-'), equals('untitled'));
+    expect(legalizeHFSFilename('..', replacement: '-'), equals('untitled'));
     expect(legalizeHFSFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni<<<??co??>>>rn'));
   });
 
@@ -311,6 +339,9 @@ void main() {
     expect(legalizeHFSFilename('H/FS', replacement: ''), equals('HFS'));
     expect(legalizeHFSFilename('HFS🚀', replacement: ''), equals('HFS🚀'));
     expect(legalizeHFSFilename('', replacement: ''), equals('untitled'));
+    expect(legalizeHFSFilename('.', replacement: ''), equals('untitled'));
+    expect(legalizeHFSFilename('..', replacement: ''), equals('untitled'));
+    expect(legalizeHFSFilename('..:/', replacement: ''), equals('untitled'));
     expect(legalizeHFSFilename('uni<<<??co??>>>rn', replacement: ''), equals('uni<<<??co??>>>rn'));
   });
 
@@ -332,6 +363,8 @@ void main() {
     expect(legalizePosixFilename('P/six'), equals('P_six'));
     expect(legalizePosixFilename('Posix🚀'), equals('Posix🚀'));
     expect(legalizePosixFilename(''), equals('untitled'));
+    expect(legalizePosixFilename('.'), equals('untitled'));
+    expect(legalizePosixFilename('..'), equals('untitled'));
     expect(legalizePosixFilename('uni<<<??co??>>>rn'), equals('uni<<<??co??>>>rn'));
   });
   test('Sanitize Posix filename with replacement', () {
@@ -346,6 +379,8 @@ void main() {
     expect(legalizePosixFilename('P/six', replacement: '-'), equals('P-six'));
     expect(legalizePosixFilename('Posix🚀', replacement: '-'), equals('Posix🚀'));
     expect(legalizePosixFilename('', replacement: '-'), equals('untitled'));
+    expect(legalizePosixFilename('.', replacement: '-'), equals('untitled'));
+    expect(legalizePosixFilename('..', replacement: '-'), equals('untitled'));
     expect(legalizePosixFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni<<<??co??>>>rn'));
   });
 
@@ -358,6 +393,9 @@ void main() {
     expect(legalizePosixFilename('P/six', replacement: ''), equals('Psix'));
     expect(legalizePosixFilename('Posix🚀', replacement: ''), equals('Posix🚀'));
     expect(legalizePosixFilename('', replacement: ''), equals('untitled'));
+    expect(legalizePosixFilename('.', replacement: ''), equals('untitled'));
+    expect(legalizePosixFilename('..', replacement: ''), equals('untitled'));
+    expect(legalizePosixFilename('..//', replacement: ''), equals('untitled'));
     expect(legalizePosixFilename('uni<<<??co??>>>rn', replacement: ''), equals('uni<<<??co??>>>rn'));
   });
 
