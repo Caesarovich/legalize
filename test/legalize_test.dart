@@ -104,6 +104,12 @@ void main() {
     expect(containsIllegalWindowsTrailingCharacters('Trailing '), isTrue);
   });
 
+  test('Check HFS illegal characters', () {
+    expect(containsIllegalHFSCharacters('HFS'), isFalse);
+    expect(containsIllegalHFSCharacters('HFS:'), isTrue);
+    expect(containsIllegalHFSCharacters('HFS/'), isTrue);
+  });
+
   test('Check Posix illegal characters', () {
     expect(containsIllegalPosixCharacters('Posix'), isFalse);
     expect(containsIllegalPosixCharacters('Posix/'), isTrue);
@@ -164,15 +170,17 @@ void main() {
     expect(isValidFilename('con', os: "android"), isTrue);
 
     // MacOS
-    expect(isValidFilename('Posix', os: "macos"), isTrue);
-    expect(isValidFilename('Posix<', os: "macos"), isTrue);
-    expect(isValidFilename('Posix/', os: "macos"), isFalse);
+    expect(isValidFilename('HFS', os: "macos"), isTrue);
+    expect(isValidFilename('HFS<', os: "macos"), isTrue);
+    expect(isValidFilename('HFS/', os: "macos"), isFalse);
+    expect(isValidFilename('HFS:', os: "macos"), isFalse);
     expect(isValidFilename('con', os: "macos"), isTrue);
 
     // iOS
-    expect(isValidFilename('Posix', os: "ios"), isTrue);
-    expect(isValidFilename('Posix<', os: "ios"), isTrue);
-    expect(isValidFilename('Posix/', os: "ios"), isFalse);
+    expect(isValidFilename('HFS', os: "ios"), isTrue);
+    expect(isValidFilename('HFS<', os: "ios"), isTrue);
+    expect(isValidFilename('HFS/', os: "ios"), isFalse);
+    expect(isValidFilename('HFS:', os: "ios"), isFalse);
     expect(isValidFilename('con', os: "ios"), isTrue);
 
     // Fuchsia
@@ -195,113 +203,119 @@ void main() {
     expect(legalizeWindowsFilename('con'), equals('_'));
     expect(legalizeWindowsFilename('con.txt'), equals('_.txt'));
     expect(legalizeWindowsFilename(stringWithNull), equals('IN_BETWEEN'));
-    expect(legalizeWindowsFilename('Windows\u0001Windows'),
-        equals('Windows_Windows'));
-    expect(legalizeWindowsFilename('Windows\u0010Windows'),
-        equals('Windows_Windows'));
-    expect(legalizeWindowsFilename('Windows\u001fWindows'),
-        equals('Windows_Windows'));
-    expect(legalizeWindowsFilename('Windows\u0020Windows'),
-        equals('Windows Windows'));
+    expect(legalizeWindowsFilename('Windows\u0001Windows'), equals('Windows_Windows'));
+    expect(legalizeWindowsFilename('Windows\u0010Windows'), equals('Windows_Windows'));
+    expect(legalizeWindowsFilename('Windows\u001fWindows'), equals('Windows_Windows'));
+    expect(legalizeWindowsFilename('Windows\u0020Windows'), equals('Windows Windows'));
+    expect(legalizeWindowsFilename('Windows\u007fWindows'), equals('Windows_Windows'));
     expect(legalizeWindowsFilename('A' * 256), equals('A' * 255));
     expect(legalizeWindowsFilename('W|ndows'), equals('W_ndows'));
     expect(legalizeWindowsFilename('Windows🚀'), equals('Windows🚀'));
     expect(legalizeWindowsFilename(''), equals('untitled'));
-    expect(legalizeWindowsFilename('uni<<<??co??>>>rn'),
-        equals('uni_____co_____rn'));
+    expect(legalizeWindowsFilename('uni<<<??co??>>>rn'), equals('uni_____co_____rn'));
   });
 
   test('Sanitize Windows filename with replacement', () {
-    expect(legalizeWindowsFilename('Windows', replacement: '-'),
-        equals('Windows'));
-    expect(legalizeWindowsFilename('Windows<', replacement: '-'),
-        equals('Windows-'));
+    expect(legalizeWindowsFilename('Windows', replacement: '-'), equals('Windows'));
+    expect(legalizeWindowsFilename('Windows<', replacement: '-'), equals('Windows-'));
     expect(legalizeWindowsFilename('con', replacement: '-'), equals('-'));
-    expect(
-        legalizeWindowsFilename('con.txt', replacement: '-'), equals('-.txt'));
-    expect(legalizeWindowsFilename(stringWithNull, replacement: '-'),
-        equals('IN-BETWEEN'));
-    expect(legalizeWindowsFilename('Windows\u0001Windows', replacement: '-'),
-        equals('Windows-Windows'));
-    expect(legalizeWindowsFilename('Windows\u0010Windows', replacement: '-'),
-        equals('Windows-Windows'));
-    expect(legalizeWindowsFilename('Windows\u001fWindows', replacement: '-'),
-        equals('Windows-Windows'));
-    expect(legalizeWindowsFilename('A' * 256, replacement: '-'),
-        equals('A' * 255));
-    expect(legalizeWindowsFilename('W|ndows', replacement: '-'),
-        equals('W-ndows'));
-    expect(legalizeWindowsFilename('Windows🚀', replacement: '-'),
-        equals('Windows🚀'));
+    expect(legalizeWindowsFilename('con.txt', replacement: '-'), equals('-.txt'));
+    expect(legalizeWindowsFilename(stringWithNull, replacement: '-'), equals('IN-BETWEEN'));
+    expect(legalizeWindowsFilename('Windows\u0001Windows', replacement: '-'), equals('Windows-Windows'));
+    expect(legalizeWindowsFilename('Windows\u0010Windows', replacement: '-'), equals('Windows-Windows'));
+    expect(legalizeWindowsFilename('Windows\u001fWindows', replacement: '-'), equals('Windows-Windows'));
+    expect(legalizeWindowsFilename('A' * 256, replacement: '-'), equals('A' * 255));
+    expect(legalizeWindowsFilename('W|ndows', replacement: '-'), equals('W-ndows'));
+    expect(legalizeWindowsFilename('Windows🚀', replacement: '-'), equals('Windows🚀'));
     expect(legalizeWindowsFilename('', replacement: '-'), equals('untitled'));
-    expect(legalizeWindowsFilename('uni<<<??co??>>>rn', replacement: '-'),
-        equals('uni-----co-----rn'));
+    expect(legalizeWindowsFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni-----co-----rn'));
   });
 
   test('Sanitize Windows filename with empty replacement', () {
-    expect(
-        legalizeWindowsFilename('Windows', replacement: ''), equals('Windows'));
-    expect(legalizeWindowsFilename('Windows<', replacement: ''),
-        equals('Windows'));
+    expect(legalizeWindowsFilename('Windows', replacement: ''), equals('Windows'));
+    expect(legalizeWindowsFilename('Windows<', replacement: ''), equals('Windows'));
     expect(legalizeWindowsFilename('con', replacement: ''), equals('untitled'));
     expect(legalizeWindowsFilename('con.txt', replacement: ''), equals('.txt'));
-    expect(
-        legalizeWindowsFilename('con<.txt', replacement: ''), equals('.txt'));
-    expect(legalizeWindowsFilename(stringWithNull, replacement: ''),
-        equals('INBETWEEN'));
-    expect(
-        legalizeWindowsFilename('A' * 256, replacement: ''), equals('A' * 255));
-    expect(legalizeWindowsFilename('<${'A' * 255}', replacement: ''),
-        equals('A' * 254));
-    expect(
-        legalizeWindowsFilename('W|ndows', replacement: ''), equals('Wndows'));
-    expect(legalizeWindowsFilename('Windows🚀', replacement: ''),
-        equals('Windows🚀'));
+    expect(legalizeWindowsFilename('con<.txt', replacement: ''), equals('.txt'));
+    expect(legalizeWindowsFilename(stringWithNull, replacement: ''), equals('INBETWEEN'));
+    expect(legalizeWindowsFilename('A' * 256, replacement: ''), equals('A' * 255));
+    expect(legalizeWindowsFilename('<${'A' * 255}', replacement: ''), equals('A' * 254));
+    expect(legalizeWindowsFilename('W|ndows', replacement: ''), equals('Wndows'));
+    expect(legalizeWindowsFilename('Windows🚀', replacement: ''), equals('Windows🚀'));
     expect(legalizeWindowsFilename('', replacement: ''), equals('untitled'));
     expect(legalizeWindowsFilename('<', replacement: ''), equals('untitled'));
     expect(legalizeWindowsFilename('con', replacement: ''), equals('untitled'));
-    expect(legalizeWindowsFilename('<|||con\u0000?', replacement: ''),
-        equals('untitled'));
-    expect(legalizeWindowsFilename('uni<<<??co??>>>rn', replacement: ''),
-        equals('unicorn'));
+    expect(legalizeWindowsFilename('<|||con\u0000?', replacement: ''), equals('untitled'));
+    expect(legalizeWindowsFilename('uni<<<??co??>>>rn', replacement: ''), equals('unicorn'));
   });
 
-  test(
-      'Sanitize Windows filename with empty replacement and custom placeholder',
-      () {
-    expect(
-        legalizeWindowsFilename('con', replacement: '', placeholder: 'special'),
-        equals('special'));
-    expect(
-        legalizeWindowsFilename('con.txt',
-            replacement: '', placeholder: 'special'),
-        equals('.txt'));
-    expect(
-        legalizeWindowsFilename('con<.txt',
-            replacement: '', placeholder: 'special'),
-        equals('.txt'));
+  test('Sanitize Windows filename with empty replacement and custom placeholder', () {
+    expect(legalizeWindowsFilename('con', replacement: '', placeholder: 'special'), equals('special'));
+    expect(legalizeWindowsFilename('con.txt', replacement: '', placeholder: 'special'), equals('.txt'));
+    expect(legalizeWindowsFilename('con<.txt', replacement: '', placeholder: 'special'), equals('.txt'));
   });
 
-  test('Sanitize Windows filename with empty replacement and empty placeholder',
-      () {
-    expect(legalizeWindowsFilename('con', replacement: '', placeholder: ''),
-        equals(''));
-    expect(legalizeWindowsFilename('con.txt', replacement: '', placeholder: ''),
-        equals('.txt'));
-    expect(
-        legalizeWindowsFilename('con<.txt', replacement: '', placeholder: ''),
-        equals('.txt'));
+  test('Sanitize Windows filename with empty replacement and empty placeholder', () {
+    expect(legalizeWindowsFilename('con', replacement: '', placeholder: ''), equals(''));
+    expect(legalizeWindowsFilename('con.txt', replacement: '', placeholder: ''), equals('.txt'));
+    expect(legalizeWindowsFilename('con<.txt', replacement: '', placeholder: ''), equals('.txt'));
   });
 
-  test(
-      'Sanitize Windows filename with empty replacement and empty placeholder and empty filename',
-      () {
-    expect(legalizeWindowsFilename('', replacement: '', placeholder: ''),
-        equals(''));
-    expect(legalizeWindowsFilename('', replacement: '', placeholder: 'special'),
-        equals('special'));
-    expect(legalizeWindowsFilename('', replacement: '', placeholder: 'special'),
-        equals('special'));
+  test('Sanitize Windows filename with empty replacement and empty placeholder and empty filename', () {
+    expect(legalizeWindowsFilename('', replacement: '', placeholder: ''), equals(''));
+    expect(legalizeWindowsFilename('', replacement: '', placeholder: 'special'), equals('special'));
+    expect(legalizeWindowsFilename('', replacement: '', placeholder: 'special'), equals('special'));
+  });
+
+  test('Sanitize HFS filename', () {
+    expect(legalizeHFSFilename('HFS'), equals('HFS'));
+    expect(legalizeHFSFilename('HFS<'), equals('HFS<'));
+    expect(legalizeHFSFilename('HFS/'), equals('HFS_'));
+    expect(legalizeHFSFilename('HFS:'), equals('HFS_'));
+    expect(legalizeHFSFilename(stringWithNull), equals('IN_BETWEEN'));
+    expect(legalizeHFSFilename('HFS\u0010HFS'), equals('HFS_HFS'));
+    expect(legalizeHFSFilename('HFS\u0010HFS'), equals('HFS_HFS'));
+    expect(legalizeHFSFilename('HFS\u001fHFS'), equals('HFS_HFS'));
+    expect(legalizeHFSFilename('HFS\u0020HFS'), equals('HFS HFS'));
+    expect(legalizeHFSFilename('HFS\u007fHFS'), equals('HFS_HFS'));
+    expect(legalizeHFSFilename('A' * 256), equals('A' * 255));
+    expect(legalizeHFSFilename('H/FS'), equals('H_FS'));
+    expect(legalizeHFSFilename('HFS🚀'), equals('HFS🚀'));
+    expect(legalizeHFSFilename(''), equals('untitled'));
+    expect(legalizeHFSFilename('uni<<<??co??>>>rn'), equals('uni<<<??co??>>>rn'));
+  });
+
+  test('Sanitize HFS filename with replacement', () {
+    expect(legalizeHFSFilename('HFS', replacement: '-'), equals('HFS'));
+    expect(legalizeHFSFilename('HFS<', replacement: '-'), equals('HFS<'));
+    expect(legalizeHFSFilename('HFS/', replacement: '-'), equals('HFS-'));
+    expect(legalizeHFSFilename('HFS:', replacement: '-'), equals('HFS-'));
+    expect(legalizeHFSFilename(stringWithNull, replacement: '-'), equals('IN-BETWEEN'));
+    expect(legalizeHFSFilename('HFS\u0001HFS', replacement: '-'), equals('HFS-HFS'));
+    expect(legalizeHFSFilename('HFS\u0010HFS', replacement: '-'), equals('HFS-HFS'));
+    expect(legalizeHFSFilename('HFS\u001fHFS', replacement: '-'), equals('HFS-HFS'));
+    expect(legalizeHFSFilename('A' * 256, replacement: '-'), equals('A' * 255));
+    expect(legalizeHFSFilename('H/FS', replacement: '-'), equals('H-FS'));
+    expect(legalizeHFSFilename('HFS🚀', replacement: '-'), equals('HFS🚀'));
+    expect(legalizeHFSFilename('', replacement: '-'), equals('untitled'));
+    expect(legalizeHFSFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni<<<??co??>>>rn'));
+  });
+
+  test('Sanitize HFS filename with empty replacement', () {
+    expect(legalizeHFSFilename('HFS', replacement: ''), equals('HFS'));
+    expect(legalizeHFSFilename('HFS<', replacement: ''), equals('HFS<'));
+    expect(legalizeHFSFilename('HFS/', replacement: ''), equals('HFS'));
+    expect(legalizeHFSFilename('HFS:', replacement: ''), equals('HFS'));
+    expect(legalizeHFSFilename(stringWithNull, replacement: ''), equals('INBETWEEN'));
+    expect(legalizeHFSFilename('A' * 256, replacement: ''), equals('A' * 255));
+    expect(legalizeHFSFilename('H/FS', replacement: ''), equals('HFS'));
+    expect(legalizeHFSFilename('HFS🚀', replacement: ''), equals('HFS🚀'));
+    expect(legalizeHFSFilename('', replacement: ''), equals('untitled'));
+    expect(legalizeHFSFilename('uni<<<??co??>>>rn', replacement: ''), equals('uni<<<??co??>>>rn'));
+  });
+
+  test('Sanitize HFS filename with empty replacement and custom placeholder', () {
+    expect(legalizeHFSFilename(':/:/', replacement: '', placeholder: 'special'), equals('special'));
   });
 
   test('Sanitize Posix filename', () {
@@ -313,101 +327,62 @@ void main() {
     expect(legalizePosixFilename('Posix\u0010Posix'), equals('Posix_Posix'));
     expect(legalizePosixFilename('Posix\u001fPosix'), equals('Posix_Posix'));
     expect(legalizePosixFilename('Posix\u0020Posix'), equals('Posix Posix'));
+    expect(legalizePosixFilename('Posix\u007fPosix'), equals('Posix_Posix'));
     expect(legalizePosixFilename('A' * 256), equals('A' * 255));
     expect(legalizePosixFilename('P/six'), equals('P_six'));
     expect(legalizePosixFilename('Posix🚀'), equals('Posix🚀'));
     expect(legalizePosixFilename(''), equals('untitled'));
-    expect(legalizePosixFilename('uni<<<??co??>>>rn'),
-        equals('uni<<<??co??>>>rn'));
+    expect(legalizePosixFilename('uni<<<??co??>>>rn'), equals('uni<<<??co??>>>rn'));
   });
   test('Sanitize Posix filename with replacement', () {
     expect(legalizePosixFilename('Posix', replacement: '-'), equals('Posix'));
     expect(legalizePosixFilename('Posix<', replacement: '-'), equals('Posix<'));
     expect(legalizePosixFilename('Posix/', replacement: '-'), equals('Posix-'));
-    expect(legalizePosixFilename(stringWithNull, replacement: '-'),
-        equals('IN-BETWEEN'));
-    expect(legalizePosixFilename('Posix\u0001Posix', replacement: '-'),
-        equals('Posix-Posix'));
-
-    expect(legalizePosixFilename('Posix\u0010Posix', replacement: '-'),
-        equals('Posix-Posix'));
-    expect(legalizePosixFilename('Posix\u001fPosix', replacement: '-'),
-        equals('Posix-Posix'));
-    expect(
-        legalizePosixFilename('A' * 256, replacement: '-'), equals('A' * 255));
+    expect(legalizePosixFilename(stringWithNull, replacement: '-'), equals('IN-BETWEEN'));
+    expect(legalizePosixFilename('Posix\u0001Posix', replacement: '-'), equals('Posix-Posix'));
+    expect(legalizePosixFilename('Posix\u0010Posix', replacement: '-'), equals('Posix-Posix'));
+    expect(legalizePosixFilename('Posix\u001fPosix', replacement: '-'), equals('Posix-Posix'));
+    expect(legalizePosixFilename('A' * 256, replacement: '-'), equals('A' * 255));
     expect(legalizePosixFilename('P/six', replacement: '-'), equals('P-six'));
-    expect(
-        legalizePosixFilename('Posix🚀', replacement: '-'), equals('Posix🚀'));
+    expect(legalizePosixFilename('Posix🚀', replacement: '-'), equals('Posix🚀'));
     expect(legalizePosixFilename('', replacement: '-'), equals('untitled'));
-    expect(legalizePosixFilename('uni<<<??co??>>>rn', replacement: '-'),
-        equals('uni<<<??co??>>>rn'));
+    expect(legalizePosixFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni<<<??co??>>>rn'));
   });
 
   test('Sanitize Posix filename with empty replacement', () {
     expect(legalizePosixFilename('Posix', replacement: ''), equals('Posix'));
     expect(legalizePosixFilename('Posix<', replacement: ''), equals('Posix<'));
     expect(legalizePosixFilename('Posix/', replacement: ''), equals('Posix'));
-    expect(legalizePosixFilename(stringWithNull, replacement: ''),
-        equals('INBETWEEN'));
-    expect(
-        legalizePosixFilename('A' * 256, replacement: ''), equals('A' * 255));
+    expect(legalizePosixFilename(stringWithNull, replacement: ''), equals('INBETWEEN'));
+    expect(legalizePosixFilename('A' * 256, replacement: ''), equals('A' * 255));
     expect(legalizePosixFilename('P/six', replacement: ''), equals('Psix'));
-    expect(
-        legalizePosixFilename('Posix🚀', replacement: ''), equals('Posix🚀'));
+    expect(legalizePosixFilename('Posix🚀', replacement: ''), equals('Posix🚀'));
     expect(legalizePosixFilename('', replacement: ''), equals('untitled'));
-    expect(legalizePosixFilename('uni<<<??co??>>>rn', replacement: ''),
-        equals('uni<<<??co??>>>rn'));
+    expect(legalizePosixFilename('uni<<<??co??>>>rn', replacement: ''), equals('uni<<<??co??>>>rn'));
   });
 
-  test('Sanitize Posix filename with empty replacement and custom placeholder',
-      () {
-    expect(legalizePosixFilename('/', replacement: '', placeholder: 'special'),
-        equals('special'));
-    expect(
-        legalizePosixFilename('///', replacement: '', placeholder: 'special'),
-        equals('special'));
-    expect(
-        legalizePosixFilename('/\u0000/',
-            replacement: '', placeholder: 'special'),
-        equals('special'));
+  test('Sanitize Posix filename with empty replacement and custom placeholder', () {
+    expect(legalizePosixFilename('/', replacement: '', placeholder: 'special'), equals('special'));
+    expect(legalizePosixFilename('///', replacement: '', placeholder: 'special'), equals('special'));
+    expect(legalizePosixFilename('/\u0000/', replacement: '', placeholder: 'special'), equals('special'));
   });
 
-  test('Sanitize Posix filename with empty replacement and empty placeholder',
-      () {
-    expect(legalizePosixFilename('/', replacement: '', placeholder: ''),
-        equals(''));
-    expect(legalizePosixFilename('///', replacement: '', placeholder: ''),
-        equals(''));
-    expect(legalizePosixFilename('/\u0000/', replacement: '', placeholder: ''),
-        equals(''));
+  test('Sanitize Posix filename with empty replacement and empty placeholder', () {
+    expect(legalizePosixFilename('/', replacement: '', placeholder: ''), equals(''));
+    expect(legalizePosixFilename('///', replacement: '', placeholder: ''), equals(''));
+    expect(legalizePosixFilename('/\u0000/', replacement: '', placeholder: ''), equals(''));
   });
 
   test('Sanitize Posix filename without replacing control characters', () {
-    expect(
-        legalizePosixFilename('Posix', shouldReplaceControlCharacters: false),
-        equals('Posix'));
-    expect(
-        legalizePosixFilename('Posix<', shouldReplaceControlCharacters: false),
-        equals('Posix<'));
-    expect(
-        legalizePosixFilename('Posix/', shouldReplaceControlCharacters: false),
-        equals('Posix_'));
-    expect(
-        legalizePosixFilename(stringWithNull,
-            shouldReplaceControlCharacters: false),
-        equals("IN_BETWEEN"));
-    expect(
-        legalizePosixFilename('Posix\u0001Posix',
-            shouldReplaceControlCharacters: false),
-        equals('Posix\u0001Posix'));
-    expect(
-        legalizePosixFilename('Posix\u0010Posix',
-            shouldReplaceControlCharacters: false),
-        equals('Posix\u0010Posix'));
-    expect(
-        legalizePosixFilename('Posix\u001fPosix',
-            shouldReplaceControlCharacters: false),
-        equals('Posix\u001fPosix'));
+    expect(legalizePosixFilename('Posix', shouldReplaceControlCharacters: false), equals('Posix'));
+    expect(legalizePosixFilename('Posix<', shouldReplaceControlCharacters: false), equals('Posix<'));
+    expect(legalizePosixFilename('Posix/', shouldReplaceControlCharacters: false), equals('Posix_'));
+    expect(legalizePosixFilename(stringWithNull, shouldReplaceControlCharacters: false), equals("IN_BETWEEN"));
+    expect(legalizePosixFilename('Posix\u0001Posix', shouldReplaceControlCharacters: false), equals('Posix\u0001Posix'));
+    expect(legalizePosixFilename('Posix\u0010Posix', shouldReplaceControlCharacters: false), equals('Posix\u0010Posix'));
+    expect(legalizePosixFilename('Posix\u001fPosix', shouldReplaceControlCharacters: false), equals('Posix\u001fPosix'));
+    expect(legalizePosixFilename('Posix\u0020Posix', shouldReplaceControlCharacters: false), equals('Posix Posix'));
+    expect(legalizePosixFilename('Posix\u007fPosix', shouldReplaceControlCharacters: false), equals('Posix\u007fPosix'));
   });
 
   test('Sanitize universal filename', () {
@@ -419,8 +394,7 @@ void main() {
     expect(legalizeFilenameUniversal('Universal/'), equals('Universal_'));
     expect(legalizeFilenameUniversal('A' * 256), equals('A' * 255));
     expect(legalizeFilenameUniversal(''), equals('untitled'));
-    expect(legalizeFilenameUniversal('uni<<<??co??>>>rn'),
-        equals('uni_____co_____rn'));
+    expect(legalizeFilenameUniversal('uni<<<??co??>>>rn'), equals('uni_____co_____rn'));
   });
 
   test('Sanitize filename', () {
@@ -442,15 +416,17 @@ void main() {
     expect(legalizeFilename('con', os: "android"), equals('con'));
 
     // MacOS
-    expect(legalizeFilename('Posix', os: "macos"), equals('Posix'));
-    expect(legalizeFilename('Posix<', os: "macos"), equals('Posix<'));
-    expect(legalizeFilename('Posix/', os: "macos"), equals('Posix_'));
+    expect(legalizeFilename('HFS', os: "macos"), equals('HFS'));
+    expect(legalizeFilename('HFS<', os: "macos"), equals('HFS<'));
+    expect(legalizeFilename('HFS/', os: "macos"), equals('HFS_'));
+    expect(legalizeFilename('HFS:', os: "macos"), equals('HFS_'));
     expect(legalizeFilename('con', os: "macos"), equals('con'));
 
     // iOS
-    expect(legalizeFilename('Posix', os: "ios"), equals('Posix'));
-    expect(legalizeFilename('Posix<', os: "ios"), equals('Posix<'));
-    expect(legalizeFilename('Posix/', os: "ios"), equals('Posix_'));
+    expect(legalizeFilename('HFS', os: "ios"), equals('HFS'));
+    expect(legalizeFilename('HFS<', os: "ios"), equals('HFS<'));
+    expect(legalizeFilename('HFS/', os: "ios"), equals('HFS_'));
+    expect(legalizeFilename('HFS:', os: "ios"), equals('HFS_'));
     expect(legalizeFilename('con', os: "ios"), equals('con'));
 
     // Fuchsia

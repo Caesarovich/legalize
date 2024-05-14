@@ -111,9 +111,11 @@ void main() {
 }
 ```
 
-By default this library will sanitize control characters (0-31), but you can disable this by setting the `shouldReplaceControlCharacters` parameter to `false`.
+By default this library will sanitize control characters (0-31 and 127), but you can disable this by setting the `shouldReplaceControlCharacters` parameter to `false`.
 
 > **Note:** Even if you disable control character replacement, the library will still replace the NUL character (0).
+
+This library also limits the length of the filename to 255 characters.
 
 ## Contributing
 

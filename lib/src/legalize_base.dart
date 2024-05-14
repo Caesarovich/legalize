@@ -23,23 +23,30 @@ final reservedWindowsFilenames = [
   'lpt9'
 ];
 
-/// Checks if the filename contains illegal Windows characters.
-bool containsIllegalWindowsCharacters(String filename) {
-  return filename.contains(RegExp(r'[<>:"/\\|?*]'));
-}
-
 /// Checks if the filename is a reserved Windows file name.
 bool isReservedWindowsFilename(String filename) {
   return reservedWindowsFilenames.contains(filename.toLowerCase().split('.').first);
 }
 
-bool containsIllegalWindowsTrailingCharacters(String filename) {
-  return filename.contains(RegExp(r'[\. ]+$'));
+final illegalWindowsCharactersRegex = RegExp(r'[<>:"/\\|?*]');
+
+/// Checks if the filename contains illegal Windows characters.
+bool containsIllegalWindowsCharacters(String filename) {
+  return filename.contains(illegalWindowsCharactersRegex);
 }
+
+final illegalWindowsTrailingCharactersRegex = RegExp(r'[\. ]+$');
+
+/// Checks if the filename contains illegal Windows trailing characters.
+bool containsIllegalWindowsTrailingCharacters(String filename) {
+  return filename.contains(illegalWindowsTrailingCharactersRegex);
+}
+
+final illegalPosixCharactersRegex = RegExp(r'[/]');
 
 /// Checks if the filename contains illegal Posix characters.
 bool containsIllegalPosixCharacters(String filename) {
-  return filename.contains(RegExp(r'[/]'));
+  return filename.contains(illegalPosixCharactersRegex);
 }
 
 /// Checks if the filename contains a null character.
@@ -47,14 +54,18 @@ bool containsNullCharacter(String filename) {
   return filename.contains(String.fromCharCode(0));
 }
 
+final controlCharacterRegex = RegExp(r'[\x00-\x1F\x7F]');
+
 /// Checks if the filename contains a control character.
 bool containsControlCharacter(String filename) {
-  return filename.contains(RegExp(r'[\x00-\x1F]'));
+  return filename.contains(controlCharacterRegex);
 }
+
+final illegalHFSCharactersRegex = RegExp(r'[/:]');
 
 /// Checks if the filename contains illegal HFS characters.
 bool containsIllegalHFSCharacters(String filename) {
-  return filename.contains(RegExp(r'[/:]'));
+  return filename.contains(illegalHFSCharactersRegex);
 }
 
 /// Checks if the filename is of valid length.
@@ -130,13 +141,13 @@ String legalizeWindowsFilename(String filename, {String replacement = '_', Strin
   result = result.replaceAll(String.fromCharCode(0), replacement);
 
   // Replace control characters
-  result = result.replaceAll(RegExp(r'[\x00-\x1F]'), replacement);
+  result = result.replaceAll(controlCharacterRegex, replacement);
 
   // Replace illegal characters
-  result = result.replaceAll(RegExp(r'[<>:"/\\|?*]'), replacement);
+  result = result.replaceAll(illegalWindowsCharactersRegex, replacement);
 
   // Replace trailing illegal characters
-  result = result.replaceAll(RegExp(r'[\. ]+$'), replacement);
+  result = result.replaceAll(illegalWindowsTrailingCharactersRegex, replacement);
 
   // Replace reserved file names
   if (isReservedWindowsFilename(result)) {
@@ -176,11 +187,11 @@ String legalizePosixFilename(String filename,
 
   // Replace control characters
   if (shouldReplaceControlCharacters) {
-    result = result.replaceAll(RegExp(r'[\x00-\x1F]'), replacement);
+    result = result.replaceAll(controlCharacterRegex, replacement);
   }
 
   // Replace illegal characters
-  result = result.replaceAll(RegExp(r'[/]'), replacement);
+  result = result.replaceAll(illegalPosixCharactersRegex, replacement);
 
   // If the filename is empty, replace it with a placeholder
   if (result.isEmpty) {
@@ -209,11 +220,11 @@ String legalizeHFSFilename(String filename, {String replacement = '_', String pl
 
   // Replace control characters
   if (shouldReplaceControlCharacters) {
-    result = result.replaceAll(RegExp(r'[\x00-\x1F]'), replacement);
+    result = result.replaceAll(controlCharacterRegex, replacement);
   }
 
   // Replace illegal characters
-  result = result.replaceAll(RegExp(r'[/:]'), replacement);
+  result = result.replaceAll(illegalHFSCharactersRegex, replacement);
 
   // If the filename is empty, replace it with a placeholder
   if (result.isEmpty) {
