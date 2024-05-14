@@ -23,8 +23,7 @@ void main() {
   print(sanitizedFilename); // myFile.txt
 
   // Sanitize for the current platform
-  final otherSanitizedFilename =
-      legalizeFilename(someOtherFilename, os: Platform.operatingSystem);
+  final otherSanitizedFilename = legalizeFilename(someOtherFilename, os: Platform.operatingSystem);
 
   print(otherSanitizedFilename);
   // On Windows: my//File.txt, On other systems: my???File.txt
