@@ -250,6 +250,9 @@ void main() {
     expect(legalizeWindowsFilename('Windows🚀', replacement: '-'), equals('Windows🚀'));
     expect(legalizeWindowsFilename('', replacement: '-'), equals('untitled'));
     expect(legalizeWindowsFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni-----co-----rn'));
+
+    // Test with replacement longer than 1 character
+    expect(legalizeWindowsFilename('TOO<>LONG', replacement: '---' * 256), equals('TOO${'-' * 252}'));
   });
 
   test('Sanitize Windows filename with empty replacement', () {
@@ -260,7 +263,7 @@ void main() {
     expect(legalizeWindowsFilename('con<.txt', replacement: ''), equals('.txt'));
     expect(legalizeWindowsFilename(stringWithNull, replacement: ''), equals('INBETWEEN'));
     expect(legalizeWindowsFilename('A' * 256, replacement: ''), equals('A' * 255));
-    expect(legalizeWindowsFilename('<${'A' * 255}', replacement: ''), equals('A' * 254));
+    expect(legalizeWindowsFilename('<${'A' * 255}', replacement: ''), equals('A' * 255));
     expect(legalizeWindowsFilename('W|ndows', replacement: ''), equals('Wndows'));
     expect(legalizeWindowsFilename('Windows🚀', replacement: ''), equals('Windows🚀'));
     expect(legalizeWindowsFilename('', replacement: ''), equals('untitled'));
@@ -327,6 +330,9 @@ void main() {
     expect(legalizeHFSFilename('.', replacement: '-'), equals('untitled'));
     expect(legalizeHFSFilename('..', replacement: '-'), equals('untitled'));
     expect(legalizeHFSFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni<<<??co??>>>rn'));
+
+    // Test with replacement longer than 1 character
+    expect(legalizeHFSFilename('TOO::LONG', replacement: '---' * 256), equals('TOO${'-' * 252}'));
   });
 
   test('Sanitize HFS filename with empty replacement', () {
@@ -382,6 +388,9 @@ void main() {
     expect(legalizePosixFilename('.', replacement: '-'), equals('untitled'));
     expect(legalizePosixFilename('..', replacement: '-'), equals('untitled'));
     expect(legalizePosixFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni<<<??co??>>>rn'));
+
+    // Test with replacement longer than 1 character
+    expect(legalizePosixFilename('TOO//LONG', replacement: '---' * 256), equals('TOO${'-' * 252}'));
   });
 
   test('Sanitize Posix filename with empty replacement', () {

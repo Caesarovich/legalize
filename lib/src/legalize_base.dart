@@ -140,11 +140,6 @@ bool isValidFilename(String filename, {String? os}) {
 String legalizeWindowsFilename(String filename, {String replacement = '_', String placeholder = 'untitled'}) {
   var result = filename;
 
-  // Check length
-  if (result.length > 255) {
-    result = result.substring(0, 255);
-  }
-
   // Replace null characters
   result = result.replaceAll(String.fromCharCode(0), replacement);
 
@@ -172,6 +167,11 @@ String legalizeWindowsFilename(String filename, {String replacement = '_', Strin
     result = placeholder;
   }
 
+  // Check length
+  if (result.length > 255) {
+    result = result.substring(0, 255);
+  }
+
   return result;
 }
 
@@ -184,11 +184,6 @@ String legalizeWindowsFilename(String filename, {String replacement = '_', Strin
 String legalizePosixFilename(String filename,
     {String replacement = '_', String placeholder = 'untitled', bool shouldReplaceControlCharacters = true}) {
   var result = filename;
-
-  // Check length
-  if (result.length > 255) {
-    result = result.substring(0, 255);
-  }
 
   // Replace null characters
   result = result.replaceAll(String.fromCharCode(0), replacement);
@@ -206,6 +201,11 @@ String legalizePosixFilename(String filename,
     result = placeholder;
   }
 
+  // Check length
+  if (result.length > 255) {
+    result = result.substring(0, 255);
+  }
+
   return result;
 }
 
@@ -217,11 +217,6 @@ String legalizePosixFilename(String filename,
 /// [shouldReplaceControlCharacters] determines whether control characters should be replaced. Default is true.
 String legalizeHFSFilename(String filename, {String replacement = '_', String placeholder = 'untitled', bool shouldReplaceControlCharacters = true}) {
   var result = filename;
-
-  // Check length
-  if (result.length > 255) {
-    result = result.substring(0, 255);
-  }
 
   // Replace null characters
   result = result.replaceAll(String.fromCharCode(0), replacement);
@@ -237,6 +232,11 @@ String legalizeHFSFilename(String filename, {String replacement = '_', String pl
   // If the filename is empty, replace it with a placeholder
   if (result.isEmpty || isRelativePath(result)) {
     result = placeholder;
+  }
+
+  // Check length
+  if (result.length > 255) {
+    result = result.substring(0, 255);
   }
 
   return result;
