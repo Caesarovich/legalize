@@ -166,7 +166,7 @@ String legalizeWindowsFilename(String filename, {String replacement = '_', Strin
   if (isReservedWindowsFilename(result)) {
     for (var reserved in reservedWindowsFilenames) {
       if (result.toLowerCase().startsWith(reserved)) {
-        result = result.replaceFirst(reserved, replacement);
+        result = replacement + result.substring(reserved.length);
         break;
       }
     }

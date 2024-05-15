@@ -47,11 +47,13 @@ void main() {
     expect(isReservedWindowsFilename('lpt7'), isTrue);
     expect(isReservedWindowsFilename('lpt8'), isTrue);
     expect(isReservedWindowsFilename('lpt9'), isTrue);
+    expect(isReservedWindowsFilename('CON'), isTrue);
   });
 
   test('Check Windows reserved file names with extensions', () {
     expect(isReservedWindowsFilename('Windows'), isFalse);
     expect(isReservedWindowsFilename('con.png'), isTrue);
+    expect(isReservedWindowsFilename('CON.png'), isTrue);
     expect(isReservedWindowsFilename('prn.jpg'), isTrue);
     expect(isReservedWindowsFilename('aux.png'), isTrue);
     expect(isReservedWindowsFilename('nul.jpg'), isTrue);
@@ -223,6 +225,7 @@ void main() {
     expect(legalizeWindowsFilename('Windows<'), equals('Windows_'));
     expect(legalizeWindowsFilename('con'), equals('_'));
     expect(legalizeWindowsFilename('con.txt'), equals('_.txt'));
+    expect(legalizeWindowsFilename('CoN.txt'), equals('_.txt'));
     expect(legalizeWindowsFilename(stringWithNull), equals('IN_BETWEEN'));
     expect(legalizeWindowsFilename('Windows\u0001Windows'), equals('Windows_Windows'));
     expect(legalizeWindowsFilename('Windows\u0010Windows'), equals('Windows_Windows'));
