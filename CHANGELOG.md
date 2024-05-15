@@ -1,3 +1,7 @@
+## 1.2.2
+
+- Change SDK contraint from '3.3.3' to '^3.0.0'
+
 ## 1.2.1
 
 - Fix: Now propery sanitizing reserved Windows filenames in regards to case sensitivity.
