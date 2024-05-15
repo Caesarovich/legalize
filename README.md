@@ -8,6 +8,7 @@ Please read the [documentation](https://pub.dev/documentation/legalize/latest/) 
 
 - ✅ Validate/Sanitize filenames for Windows
 - ✅ Validate/Sanitize filenames for macOS/iOS (HFS/HFS+)
+- ✅ Validate/Sanitize filenames for Android (FAT32)
 - ✅ Validate/Sanitize filenames for Linux, and other POSIX systems
 
 > **Note:** While this package strives to provide a comprehensive solution for validating filenames, it may not cover all types of file system or edge cases. Please report any issues you encounter.
@@ -111,11 +112,24 @@ void main() {
 }
 ```
 
-By default this library will sanitize control characters (0-31 and 127), but you can disable this by setting the `shouldReplaceControlCharacters` parameter to `false`.
+## Specifics
 
-> **Note:** Even if you disable control character replacement, the library will still replace the NUL character (0).
+For ease of use and development, this library makes the following assumptions:
 
-This library also limits the length of the filename to 255 characters.
+- The NUL character (0) is not allowed in filenames on any system. (Even though it is allowed on some systems)
+- The ASCII control characters (0-31 and 127) are not allowed in filenames on any system by default. These can be preserved for HFS (_MacOS/iOS_) and Posix (_Linux_) systems using the `shouldReplaceControlCharacters` parameter.
+- The slash (`/`) character is not allowed in filenames on any system.
+- A filename cannot be empty.
+- A filename cannot be `.` or `..`.
+- A filename's length cannot exceed 255 characters.
+
+These assumptions are based on the most common restrictions across different operating systems.
+
+The `legalizeFilename` and `isValidFilename` functions assume the most "restrictive" set of restrictions by default for a given operating system:
+
+- On Android, the FAT32 restrictions are applied even though Android also supports EXT filesystems (Which is less restrictive).
+- On MacOS/iOS, the HFS restrictions are applied even though MacOS/iOS also supports APFS (Which is less restrictive).
+- On Fuchsia, the universal restrictions are applied because I couldn't find any information on the filesystem used by Fuchsia.
 
 ## Contributing
 

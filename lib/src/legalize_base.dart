@@ -28,11 +28,16 @@ bool isReservedWindowsFilename(String filename) {
   return reservedWindowsFilenames.contains(filename.toLowerCase().split('.').first);
 }
 
-final illegalWindowsCharactersRegex = RegExp(r'[<>:"/\\|?*]');
+final illegalFATCharactersRegex = RegExp(r'[<>:"/\\|?*]');
+
+/// Checks if the filename contains illegal FAT characters.
+bool containsIllegalFATCharacters(String filename) {
+  return filename.contains(illegalFATCharactersRegex) || containsControlCharacters(filename);
+}
 
 /// Checks if the filename contains illegal Windows characters.
 bool containsIllegalWindowsCharacters(String filename) {
-  return filename.contains(illegalWindowsCharactersRegex);
+  return filename.contains(illegalFATCharactersRegex);
 }
 
 final illegalWindowsTrailingCharactersRegex = RegExp(r'[\. ]+$');
@@ -57,7 +62,7 @@ bool containsNullCharacter(String filename) {
 final controlCharacterRegex = RegExp(r'[\x00-\x1F\x7F]');
 
 /// Checks if the filename contains a control character.
-bool containsControlCharacter(String filename) {
+bool containsControlCharacters(String filename) {
   return filename.contains(controlCharacterRegex);
 }
 
@@ -75,7 +80,7 @@ bool isLegalLength(String filename) {
   return filename.length <= 255 && filename.isNotEmpty;
 }
 
-/// Chechs if the filename is a relative path.
+/// Checks if the filename is a relative path.
 ///
 /// Returns `true` if filename is "." or "..".
 bool isRelativePath(String filename) {
@@ -107,6 +112,13 @@ bool isValidHFSFilename(String filename) {
   return isLegalLength(filename) && !containsIllegalHFSCharacters(filename) && !isRelativePath(filename);
 }
 
+/// Checks if the filename is a valid FAT filename.
+///
+/// This includes checking for illegal characters and length.
+bool isValidFATFilename(String filename) {
+  return isLegalLength(filename) && !containsIllegalFATCharacters(filename) && !containsNullCharacter(filename) && !isRelativePath(filename);
+}
+
 /// Checks if the filename is valid for all systems.
 bool isValidUniversalFilename(String filename) {
   return isValidPosixFilename(filename) && isValidWindowsFilename(filename) && isValidHFSFilename(filename);
@@ -124,9 +136,10 @@ bool isValidFilename(String filename, {String? os}) {
     case 'macos':
       return isValidHFSFilename(filename);
     case 'android':
-    case 'fuchsia':
+      return isValidFATFilename(filename);
     case 'linux':
       return isValidPosixFilename(filename);
+    case 'fuchsia':
     default:
       return isValidUniversalFilename(filename);
   }
@@ -140,14 +153,11 @@ bool isValidFilename(String filename, {String? os}) {
 String legalizeWindowsFilename(String filename, {String replacement = '_', String placeholder = 'untitled'}) {
   var result = filename;
 
-  // Replace null characters
-  result = result.replaceAll(String.fromCharCode(0), replacement);
-
   // Replace control characters
   result = result.replaceAll(controlCharacterRegex, replacement);
 
   // Replace illegal characters
-  result = result.replaceAll(illegalWindowsCharactersRegex, replacement);
+  result = result.replaceAll(illegalFATCharactersRegex, replacement);
 
   // Replace trailing illegal characters
   result = result.replaceAll(illegalWindowsTrailingCharactersRegex, replacement);
@@ -161,6 +171,32 @@ String legalizeWindowsFilename(String filename, {String replacement = '_', Strin
       }
     }
   }
+
+  // If the filename is empty, replace it with a placeholder
+  if (result.isEmpty || isRelativePath(result)) {
+    result = placeholder;
+  }
+
+  // Check length
+  if (result.length > 255) {
+    result = result.substring(0, 255);
+  }
+
+  return result;
+}
+
+/// Sanitizes the filename for FAT systems.
+///
+/// [replacement] is used to replace illegal characters.
+/// If the filename is empty after sanitization, it will be replaced with [placeholder].
+/// It is recommended to not use an empty [replacement] and an empty [placeholder] as it may result in an empty filename.
+String legalizeFATFilename(String filename, {String replacement = '_', String placeholder = 'untitled'}) {
+  var result = filename;
+
+  result = result.replaceAll(controlCharacterRegex, replacement);
+
+  // Replace illegal characters
+  result = result.replaceAll(illegalFATCharactersRegex, replacement);
 
   // If the filename is empty, replace it with a placeholder
   if (result.isEmpty || isRelativePath(result)) {
@@ -276,15 +312,17 @@ String legalizeFilename(String filename, {String? os, String replacement = '_', 
     case 'ios':
       result = legalizeHFSFilename(result, replacement: replacement, placeholder: placeholder);
       break;
-    case 'linux':
+
     case 'android':
-    case 'fuchsia':
+      result = legalizeFATFilename(result, replacement: replacement, placeholder: placeholder);
+    case 'linux':
       result = legalizePosixFilename(
         result,
         replacement: replacement,
         placeholder: placeholder,
       );
       break;
+    case 'fuchsia':
     default:
       result = legalizeFilenameUniversal(result, replacement: replacement, placeholder: placeholder);
   }

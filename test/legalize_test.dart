@@ -186,7 +186,7 @@ void main() {
 
     // Android
     expect(isValidFilename('Posix', os: "android"), isTrue);
-    expect(isValidFilename('Posix<', os: "android"), isTrue);
+    expect(isValidFilename('Posix<', os: "android"), isFalse);
     expect(isValidFilename('Posix/', os: "android"), isFalse);
     expect(isValidFilename('con', os: "android"), isTrue);
 
@@ -206,9 +206,9 @@ void main() {
 
     // Fuchsia
     expect(isValidFilename('Posix', os: "fuchsia"), isTrue);
-    expect(isValidFilename('Posix<', os: "fuchsia"), isTrue);
+    expect(isValidFilename('Posix<', os: "fuchsia"), isFalse);
     expect(isValidFilename('Posix/', os: "fuchsia"), isFalse);
-    expect(isValidFilename('con', os: "fuchsia"), isTrue);
+    expect(isValidFilename('con', os: "fuchsia"), isFalse);
 
     // Unspecified / Unknown
     expect(isValidFilename('Universal'), isTrue);
@@ -355,6 +355,65 @@ void main() {
     expect(legalizeHFSFilename(':/:/', replacement: '', placeholder: 'special'), equals('special'));
   });
 
+  test('Sanitize FAT filename', () {
+    expect(legalizeFATFilename('FAT'), equals('FAT'));
+    expect(legalizeFATFilename('FAT<'), equals('FAT_'));
+    expect(legalizeFATFilename('FAT/'), equals('FAT_'));
+    expect(legalizeFATFilename('FAT:'), equals('FAT_'));
+    expect(legalizeFATFilename(stringWithNull), equals('IN_BETWEEN'));
+    expect(legalizeFATFilename('FAT\u0010FAT'), equals('FAT_FAT'));
+    expect(legalizeFATFilename('FAT\u0010FAT'), equals('FAT_FAT'));
+    expect(legalizeFATFilename('FAT\u001fFAT'), equals('FAT_FAT'));
+    expect(legalizeFATFilename('FAT\u0020FAT'), equals('FAT FAT'));
+    expect(legalizeFATFilename('FAT\u007fFAT'), equals('FAT_FAT'));
+    expect(legalizeFATFilename('A' * 256), equals('A' * 255));
+    expect(legalizeFATFilename('F/AT'), equals('F_AT'));
+    expect(legalizeFATFilename('FAT🚀'), equals('FAT🚀'));
+    expect(legalizeFATFilename(''), equals('untitled'));
+    expect(legalizeFATFilename('.'), equals('untitled'));
+    expect(legalizeFATFilename('..'), equals('untitled'));
+    expect(legalizeFATFilename('uni<<<??co??>>>rn'), equals('uni_____co_____rn'));
+  });
+
+  test('Sanitize FAT filename with replacement', () {
+    expect(legalizeFATFilename('FAT', replacement: '-'), equals('FAT'));
+    expect(legalizeFATFilename('FAT<', replacement: '-'), equals('FAT-'));
+    expect(legalizeFATFilename('FAT/', replacement: '-'), equals('FAT-'));
+    expect(legalizeFATFilename('FAT:', replacement: '-'), equals('FAT-'));
+    expect(legalizeFATFilename(stringWithNull, replacement: '-'), equals('IN-BETWEEN'));
+    expect(legalizeFATFilename('FAT\u0001FAT', replacement: '-'), equals('FAT-FAT'));
+    expect(legalizeFATFilename('FAT\u0010FAT', replacement: '-'), equals('FAT-FAT'));
+    expect(legalizeFATFilename('FAT\u001fFAT', replacement: '-'), equals('FAT-FAT'));
+    expect(legalizeFATFilename('A' * 256, replacement: '-'), equals('A' * 255));
+    expect(legalizeFATFilename('F/AT', replacement: '-'), equals('F-AT'));
+    expect(legalizeFATFilename('FAT🚀', replacement: '-'), equals('FAT🚀'));
+    expect(legalizeFATFilename('', replacement: '-'), equals('untitled'));
+    expect(legalizeFATFilename('uni<<<??co??>>>rn', replacement: '-'), equals('uni-----co-----rn'));
+
+    // Test with replacement longer than 1 character
+    expect(legalizeFATFilename('TOO//LONG', replacement: '---' * 256), equals('TOO${'-' * 252}'));
+  });
+
+  test('Sanitize FAT filename with empty replacement', () {
+    expect(legalizeFATFilename('FAT', replacement: ''), equals('FAT'));
+    expect(legalizeFATFilename('FAT<', replacement: ''), equals('FAT'));
+    expect(legalizeFATFilename('FAT/', replacement: ''), equals('FAT'));
+    expect(legalizeFATFilename('FAT:', replacement: ''), equals('FAT'));
+    expect(legalizeFATFilename(stringWithNull, replacement: ''), equals('INBETWEEN'));
+    expect(legalizeFATFilename('A' * 256, replacement: ''), equals('A' * 255));
+    expect(legalizeFATFilename('F/AT', replacement: ''), equals('FAT'));
+    expect(legalizeFATFilename('FAT🚀', replacement: ''), equals('FAT🚀'));
+    expect(legalizeFATFilename('', replacement: ''), equals('untitled'));
+    expect(legalizeFATFilename('.', replacement: ''), equals('untitled'));
+    expect(legalizeFATFilename('..', replacement: ''), equals('untitled'));
+    expect(legalizeFATFilename('..//', replacement: ''), equals('untitled'));
+    expect(legalizeFATFilename('uni<<<??co??>>>rn', replacement: ''), equals('unicorn'));
+  });
+
+  test('Sanitize FAT filename with empty replacement and custom placeholder', () {
+    expect(legalizeFATFilename('</>\\?|*"', replacement: '', placeholder: 'special'), equals('special'));
+  });
+
   test('Sanitize Posix filename', () {
     expect(legalizePosixFilename('Posix'), equals('Posix'));
     expect(legalizePosixFilename('Posix<'), equals('Posix<'));
@@ -457,9 +516,9 @@ void main() {
     expect(legalizeFilename('con', os: "linux"), equals('con'));
 
     // Android
-    expect(legalizeFilename('Posix', os: "android"), equals('Posix'));
-    expect(legalizeFilename('Posix<', os: "android"), equals('Posix<'));
-    expect(legalizeFilename('Posix/', os: "android"), equals('Posix_'));
+    expect(legalizeFilename('FAT', os: "android"), equals('FAT'));
+    expect(legalizeFilename('FAT<', os: "android"), equals('FAT_'));
+    expect(legalizeFilename('FAT/', os: "android"), equals('FAT_'));
     expect(legalizeFilename('con', os: "android"), equals('con'));
 
     // MacOS
@@ -477,10 +536,10 @@ void main() {
     expect(legalizeFilename('con', os: "ios"), equals('con'));
 
     // Fuchsia
-    expect(legalizeFilename('Posix', os: "fuchsia"), equals('Posix'));
-    expect(legalizeFilename('Posix<', os: "fuchsia"), equals('Posix<'));
-    expect(legalizeFilename('Posix/', os: "fuchsia"), equals('Posix_'));
-    expect(legalizeFilename('con', os: "fuchsia"), equals('con'));
+    expect(legalizeFilename('FUCHSIA', os: "fuchsia"), equals('FUCHSIA'));
+    expect(legalizeFilename('FUCHSIA<', os: "fuchsia"), equals('FUCHSIA_'));
+    expect(legalizeFilename('FUCHSIA/', os: "fuchsia"), equals('FUCHSIA_'));
+    expect(legalizeFilename('con', os: "fuchsia"), equals('_'));
 
     // Unspecified / Unknown
     expect(legalizeFilename('Universal'), equals('Universal'));
