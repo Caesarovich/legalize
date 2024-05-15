@@ -19,7 +19,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  legalize: ^1.2.0
+  legalize: ^1.2.1
 ```
 
 ## Usage

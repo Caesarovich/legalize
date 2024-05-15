@@ -1,3 +1,7 @@
+## 1.2.1
+
+- Fix: Now propery sanitizing reserved Windows filenames in regards to case sensitivity.
+
 ## 1.2.0
 
 - Added `legalizeHFSFilename` and `isValidHFSFilename` functions.
